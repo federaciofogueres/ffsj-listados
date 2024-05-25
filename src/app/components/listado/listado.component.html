@@ -1,0 +1,26 @@
+<input type="file" (change)="onFileChange($event)" />
+<button type="button">Subir archivo</button>
+
+@for (listado of data; track listado; let i = $index) {
+    <div>
+        <h2>Tabla {{i + 1}}</h2>
+        <table>
+            <thead>
+              <tr>
+                @for (key of keys[i]; track $index) {
+                    <th>{{key}}</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+                @for (item of data[i]; track $index) {
+                    <tr>
+                    @for (key of keys[i]; track $index) {
+                        <td>{{item[key]}}</td>
+                    }
+                    </tr>
+                }
+            </tbody>
+          </table>
+    </div>
+}
