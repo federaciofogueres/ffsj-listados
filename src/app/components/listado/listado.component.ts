@@ -1,52 +1,62 @@
-import { Component } from '@angular/core';
 import * as XLSX from 'xlsx';
 import { ListadosService } from '../../services/listados.service';
+
+// import function to register Swiper custom elements
+import { CUSTOM_ELEMENTS_SCHEMA, Component, ElementRef, Renderer2, ViewChild, signal } from '@angular/core';
+import { SwiperContainer } from 'swiper/element';
+import { SwiperOptions } from 'swiper/types';
 
 @Component({
   selector: 'app-listado',
   standalone: true,
   imports: [],
   templateUrl: './listado.component.html',
-  styleUrl: './listado.component.scss'
+  styleUrl: './listado.component.scss',
+  schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class ListadoComponent {
 
   dataToUpload: any[] = [];
   data: any[] = []; // Los datos obtenidos desde Firestore
   keys: any[] = []; // Las claves de los objetos de datos
+  showData: any[] = [];
+  loading = true;
+
+  swiperElement = signal<SwiperContainer | null>(null);
+  @ViewChild('swiperContainer') swiperContainer!: ElementRef;
 
   constructor(
-    private listadosService: ListadosService
+    private listadosService: ListadosService,
+    private renderer: Renderer2,
+    // @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
   ngOnInit() {
+    this.loading = true;
     this.listadosService.getAll().subscribe((listados: any[][]) => { // Explicitly type listados as any[][]
-      console.log(listados);
-      console.log(listados[0]);
-      Object.keys(listados[0]).forEach((key: any) => {
-        this.data.push(listados[0][key]);
-        this.keys.push(Object.keys(listados[0][key][0]));
-      });
-
-      console.log(this.data);
-      console.log(this.keys);
-      
-
-      
-      
-      // listados[0].forEach((listado: any) => {
-      //   this.data.push(listado);
-      // });
-      
-      // this.keys = listados.map(listado => {
-      //   if (listado.length > 0) {
-      //     // Obtiene las claves del primer objeto de datos para cada array
-      //     return Object.keys(listado[0]);
-      //   } else {
-      //     return [];
-      //   }
-      // });
+      for(let key of Object.keys(listados[0])) { 
+        this.data.push(listados[0][key as any]); // Explicitly type the index expression as 'any'
+        this.keys.push(Object.keys(listados[0][key as any][0]));
+        this.showData.push(listados[0][key as any].map((item: any) => ({
+          nombre: item['NOMBRE'] || item['NOMBRE Y APELLIDOS'],
+          asiste: item.asiste
+        })));
+      }
+      this.loading = false;
+      this.initSwiper();
     });
+  }
+
+  initSwiper() {
+    const swiperElemConstructor = document.querySelector('swiper-container');
+    const swiperOptions: SwiperOptions = {
+      slidesPerView: 1,
+      navigation: true,
+      pagination: true,
+    };
+    Object.assign(swiperElemConstructor!, swiperOptions);
+    this.swiperElement.set(swiperElemConstructor as SwiperContainer);
+    this.swiperElement()?.initialize();
   }
 
   onFileChange(evt: any) {
@@ -69,6 +79,9 @@ export class ListadoComponent {
   }
 
   createData(data: any[]) {
+    for(let field of data) {
+      field['asiste'] = false;
+    }
     this.dataToUpload.push(data);
   }
 
@@ -76,9 +89,6 @@ export class ListadoComponent {
     const dataObject = this.dataToUpload.reduce((obj, item, index) => {
       return {...obj, ['item' + index]: item};
     }, {});
-    console.log(dataObject);
-    
-    console.log(this.dataToUpload);
     this.listadosService.create(dataObject, 'recompensas'); // Replace this line with the following (if you are using Firestore
   }
 
