@@ -33,7 +33,7 @@ export class ListadoComponent {
 
   ngOnInit() {
     this.loading = true;
-    this.listadosService.getAll().subscribe((listados: any[][]) => { // Explicitly type listados as any[][]
+    this.listadosService.getAll().then((listados: any[][]) => { // Explicitly type listados as any[][]
       for(let key of Object.keys(listados[0])) { 
         this.data.push(listados[0][key as any]); // Explicitly type the index expression as 'any'
         this.keys.push(Object.keys(listados[0][key as any][0]));
@@ -89,7 +89,7 @@ export class ListadoComponent {
     const dataObject = this.dataToUpload.reduce((obj, item, index) => {
       return {...obj, ['item' + index]: item};
     }, {});
-    this.listadosService.create(dataObject, 'recompensas'); // Replace this line with the following (if you are using Firestore
+    this.listadosService.create(dataObject, 'nuevoDoc'); // Replace this line with the following (if you are using Firestore
   }
 
 }

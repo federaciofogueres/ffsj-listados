@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Firestore, collection, collectionData, deleteDoc, doc, getDoc, setDoc, updateDoc } from '@angular/fire/firestore';
+import { Firestore, collection, collectionData, query, getDocs, deleteDoc, doc, getDoc, setDoc, updateDoc, DocumentData } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 
 @Injectable({
@@ -21,7 +21,16 @@ export class ListadosService {
 
   // Read
   getAll() {
-    return collectionData(this._collection) as Observable<any[]>;
+    const queryData = query(collection(this._firestore, 'listados')); // Rename the variable to queryData
+    return getDocs(queryData).then(querySnapshot => {
+      const docs: any[] = [];
+      querySnapshot.forEach(doc => {
+        const data: any = doc.data();
+        data.path = doc.ref.path; // Aquí está el 'path'
+        docs.push(data);
+      });
+      return docs;
+    });
   }
 
   // Read one
