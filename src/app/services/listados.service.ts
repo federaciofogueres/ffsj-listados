@@ -21,6 +21,8 @@ export class ListadosService {
 
   // Read
   getAll() {
+    console.log('holaaaaa');
+    
     const queryData = query(collection(this._firestore, 'listados')); // Rename the variable to queryData
     return getDocs(queryData).then(querySnapshot => {
       const docs: any[] = [];
@@ -29,6 +31,8 @@ export class ListadosService {
         data.path = doc.ref.path; // Aquí está el 'path'
         docs.push(data);
       });
+      console.log(docs);
+      
       return docs;
     });
   }

@@ -25,6 +25,6 @@ export const appConfig: ApplicationConfig = {
     UserTrackingService, 
     importProvidersFrom(provideFirestore(() => getFirestore())), 
     importProvidersFrom(provideStorage(() => getStorage())), 
-    provideAnimationsAsync()
+    provideAnimationsAsync(), provideAnimationsAsync()
   ]
 };

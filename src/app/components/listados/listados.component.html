@@ -1,1 +1,81 @@
-<p>listados works!</p>
+
+<div class="container-fluid mt-3">
+    <!-- <div class="d-flex flex-column flex-lg-row justify-content-between">
+      <div class="d-flex justify-content-between align-items-center">
+        <span class="h2">Datos subidos</span>
+        <div class="dropdown">
+          <button class="drop-btn" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="bi bi-gear-fill" style="font-size: 1rem;">
+                  <span style="font-style: normal;">
+                      Opciones
+                  </span>
+              </i>
+          </button>
+          <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+              <li><a class="dropdown-item" (click)="downloadExcelTemplate()"><i class="bi bi-filetype-xlsx me-2"></i>Descargar plantilla</a></li>
+              <li><a class="dropdown-item" (click)="fileInput.click()"><i class="bi bi-cloud-arrow-up-fill me-2"></i>Subir Excel</a></li>
+              <li><a class="dropdown-item" (click)="showInput = !showInput"><i class="bi bi-qr-code-scan me-2"></i>Añadir campo</a></li>
+              @if(archivoSubido) {
+                <li>
+                  <a class="dropdown-item" [matMenuTriggerFor]="filterMenu" (click)="$event.stopPropagation()">
+                    <i class="bi bi-list me-2"></i>Filtros
+                    <mat-menu #filterMenu="matMenu">
+                      @for(cabecera of nuevasCabeceras; track cabecera; let i = $index){
+                        <button mat-menu-item (click)="$event.stopPropagation()">
+                          <mat-checkbox [checked]="cabecera.active" (click)="changeStateCabecera(cabecera)">{{cabecera.label}}</mat-checkbox>
+                        </button>
+                      }
+                    </mat-menu>
+                  </a>
+                </li>
+              }
+          </ul>
+        </div>
+        <input #fileInput style="display: none" type="file" (change)="onFileChange($event)" multiple="false" />
+      </div>
+      @if (showInput) {
+        <div class="d-flex justify-content-end">
+          <input #campoInput type="text" class="form-control me-3">
+          <button class="btn btn-primary" (click)="addCampo(campoInput.value); campoInput.value=''">
+            <i class="bi bi-check"></i>
+          </button>
+        </div>
+      }
+    </div>
+    <hr> -->
+    <div class="table-container w-100 h-100">
+      @if (!Boolean(keys) || keys.length === 0) { 
+        <div class="archivos-sin-cargar p-3 text-center d-flex flex-column justify-content-center align-items-center">
+          <span class="h2 mb-3">No hay datos cargados.</span>
+          <i class="bi bi-ban" style="font-size: 5rem;"></i>
+          <span class="h2 mt-3">Carga un archivo.</span>
+        </div>
+      } @else {
+        <mat-table [dataSource]="data" class="mat-elevation-z8">
+            <ng-container [matColumnDef]="'Listados'">
+                <mat-header-cell *matHeaderCellDef> Listados </mat-header-cell>
+                <mat-cell *matCellDef="let element">
+                    {{element.label}}
+                </mat-cell>
+            </ng-container>
+            <ng-container [matColumnDef]="'Accion'">
+                <mat-header-cell *matHeaderCellDef> Acción </mat-header-cell>
+                <mat-cell *matCellDef="let element">
+                    <button class="btn btn-primary d-flex align-items-center m-2" (click)="viewItem(element)">
+                        <i class="bi bi-eye me-2" style="font-size: 1.5rem;"></i>
+                        <span>
+                            Visualizar listado
+                        </span>
+                    </button>
+                </mat-cell>
+            </ng-container>
+          <mat-header-row *matHeaderRowDef="['Listados', 'Accion']"></mat-header-row>
+          <mat-row *matRowDef="let row; columns: ['Listados', 'Accion'];"></mat-row>
+        </mat-table>
+      }
+      <mat-paginator [pageSizeOptions]="[5, 10, 20]"
+          showFirstLastButtons
+          aria-label="Select page of periodic elements">
+      </mat-paginator>
+    </div>
+  </div>
