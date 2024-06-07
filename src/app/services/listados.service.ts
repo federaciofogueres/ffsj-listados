@@ -1,16 +1,15 @@
 import { Injectable, inject } from '@angular/core';
-import { Firestore, collection, collectionData, query, getDocs, deleteDoc, doc, getDoc, setDoc, updateDoc, DocumentData } from '@angular/fire/firestore';
-import { Observable } from 'rxjs';
+import { Firestore, collection, deleteDoc, doc, getDoc, getDocs, query, setDoc, updateDoc } from '@angular/fire/firestore';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ListadosService {
 
+  private listadoSeleccionado: any;
 
   private _firestore = inject(Firestore);
 
-  private _collection = collection(this._firestore, 'listados');
 
   // private _storage = getStorage(this._firebaseApp, 'gs://exponinot.appspot.com');
 
@@ -60,4 +59,11 @@ export class ListadosService {
     await deleteDoc(ref);
   }
 
+  setListado(listado: any) {
+    this.listadoSeleccionado = listado;
+  }
+
+  getListado() {
+    return this.listadoSeleccionado;
+  }
 }

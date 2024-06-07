@@ -1,12 +1,13 @@
-import { Component } from '@angular/core';
-import { ListadosService } from '../../services/listados.service';
-import { MatTableModule } from '@angular/material/table';
 import { CommonModule } from '@angular/common';
+import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
+import { MatTableModule } from '@angular/material/table';
 import { Router } from '@angular/router';
+import { CookieService } from 'ngx-cookie-service';
+import { ListadosService } from '../../services/listados.service';
 
 export interface Listado {
   label: string;
@@ -38,7 +39,8 @@ export class ListadosComponent {
 
   constructor(
     private listadosService: ListadosService,
-    private router: Router
+    private router: Router,
+    private cookieService: CookieService
   ) {}
 
 
@@ -68,6 +70,7 @@ export class ListadosComponent {
           this.keys.push(listadoGroup[0]['path'])
           dataToPush.key = listadoGroup[0]['path'];
           dataToPush.label = listadoGroup[0]['path'].split('/')[1];
+          dataToPush.value = listadoGroup[0]['item0'];
           this.data.push(dataToPush);
           for (let listado of listadoGroup) {
             console.log(listado);
@@ -77,6 +80,7 @@ export class ListadosComponent {
           dataToPush.key = listadoGroup['path'];
           // @ts-ignore
           dataToPush.label = listadoGroup['path'].split('/')[1];
+          dataToPush.value = listadoGroup['item0'];
           this.data.push(dataToPush);
         }
         
@@ -87,9 +91,7 @@ export class ListadosComponent {
   }
   
   viewItem(element: any) {
-    console.log(element);
-    console.log(`/listados/${element.key}`);
-    
+    this.listadosService.setListado(element.value);
     this.router.navigate([`/${element.key}`]);
   }
 }
