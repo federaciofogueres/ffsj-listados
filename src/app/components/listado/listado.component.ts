@@ -3,7 +3,7 @@ import { ListadosService } from '../../services/listados.service';
 
 // import function to register Swiper custom elements
 import { CommonModule } from '@angular/common';
-import { CUSTOM_ELEMENTS_SCHEMA, Component, ViewChild } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA, ChangeDetectorRef, Component, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
@@ -57,9 +57,12 @@ export class ListadoComponent {
   loading: boolean = true;
   dataToUpload: any[] = [];
 
+  documentTitle: string = 'Sin nombre';
+
   constructor(
     private listadosService: ListadosService,
-    private cookieService: CookieService
+    private cookieService: CookieService,
+    private changeDetectorRefs: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -67,27 +70,59 @@ export class ListadoComponent {
     this.loadDataFromCookies();
   }
 
-  loadDataFromCookies() {
-    const data = this.listadosService.getListado();
-    if (data) {
-      try {
-        // this.data = JSON.parse(data);
-        this.processDataHeaders(data);
-        data.forEach((item: any) => {
-          this.data.push(Object.values(item));
-        });
-        this.data.unshift(Object.keys(data[0]));
-        // this.data = data;
-        this.addAdditionalFields();
-        this.sortDataAndHeaders();
-        this.initializeDataSource();
-        // if (this.dataSource) {
-        //   this.dataSource.paginator = this.paginator;
-        //   this.dataSource.data = this.data;
-        // }
-      } catch (e) {
-        console.error('Error parsing data from cookies', e);
+  async loadDataFromCookies() {
+    let label = this.cookieService.get('listado');
+    console.log(label);
+    let data: any = [];
+    await this.listadosService.getOne(label).then((listado: any) => {
+      console.log(listado);
+      data = this.ordenarPropiedades(listado['item0']);
+      this.documentTitle = label;
+    });
+    
+    if(data.length > 0) {
+      this.procesaDataFromCache(data);
+    } else {
+      data = this.listadosService.getListado();
+      this.documentTitle = this.listadosService.getListadoName();
+      if (data) {
+        this.procesaDataFromCache(data);
       }
+    }
+    
+  }
+
+  // @ts-ignore
+  ordenarPropiedades(objetos) {
+    const ordenDePropiedades = ['Tipo', 'FOGUERA /BARRACA', 'Ha llegado'];
+  // @ts-ignore
+    return objetos.map(obj => {
+      let newObj = {};
+      ordenDePropiedades.forEach(prop => {// @ts-ignore
+        newObj[prop] = obj[prop];
+      });
+      return newObj;
+    });
+  }
+
+  procesaDataFromCache(data: any) {
+    try {
+      // this.data = JSON.parse(data);
+      this.processDataHeaders(data);
+      data.forEach((item: any) => {
+        this.data.push(Object.values(item));
+      });
+      this.data.unshift(Object.keys(data[0]));
+      // this.data = data;
+      this.addAdditionalFields();
+      this.sortDataAndHeaders();
+      this.initializeDataSource();
+      // if (this.dataSource) {
+      //   this.dataSource.paginator = this.paginator;
+      //   this.dataSource.data = this.data;
+      // }
+    } catch (e) {
+      console.error('Error parsing data from cookies', e);
     }
   }
 
@@ -138,12 +173,15 @@ export class ListadoComponent {
       const wb: XLSX.WorkBook = XLSX.read(bstr, { type: 'binary' });
       const wsname: string = wb.SheetNames[0];
       const ws: XLSX.WorkSheet = wb.Sheets[wsname];
+      this.documentTitle = wsname;
       this.data = XLSX.utils.sheet_to_json(ws, { header: 1 });
   
       this.processExcelHeaders(wb);
       this.addAdditionalFields();
       this.sortDataAndHeaders();
       this.initializeDataSource();
+      this.createData();
+      this.saveOnFirebase();
     };
     reader.readAsBinaryString(target.files[0]);
   }
@@ -154,13 +192,23 @@ export class ListadoComponent {
       const firstItem = listado[0];
       // Obtenemos las claves del objeto y las asignamos a this.displayedColumns
       let headers = Object.keys(firstItem);
+      headers.sort((a, b) => firstItem[a] - firstItem[b]);
       headers.map((header: any, index: any) => {
-        this.nuevasCabeceras.push( {
-          label: header,
-          order: index,
-          active: true,
-          type: 'text'
-        });
+        if (firstItem[header] === false || firstItem[header] === true) {
+          this.nuevasCabeceras.push({
+            label: header,
+            order: index,
+            active: true,
+            type: 'checkbox'
+          });
+        } else {
+          this.nuevasCabeceras.push( {
+            label: header,
+            order: index,
+            active: true,
+            type: 'text'
+          });
+        }
       });
     }
   }
@@ -192,7 +240,7 @@ export class ListadoComponent {
         this.data[i].push(false);
       }
     }
-    this.nuevasCabeceras.sort((a, b) => a.order - b.order);
+    // this.nuevasCabeceras.sort((a, b) => a.order - b.order);
   }
 
   sortDataAndHeaders() {
@@ -222,19 +270,90 @@ export class ListadoComponent {
     
   }
 
-  createData(data: any[]) {
-    for(let field of data) {
+  createData() {
+    for(let field of this.data) {
       field['asiste'] = false;
     }
-    this.dataToUpload.push(data);
+    this.dataToUpload.push(this.data);
+    this.dataToUpload.unshift(this.displayedColumns);
   }
 
   saveOnFirebase() {
-    const dataObject = this.dataToUpload.reduce((obj, item, index) => {
-      return {...obj, ['item' + index]: item};
-    }, {});
-    this.listadosService.create(dataObject, 'nuevoDoc'); // Replace this line with the following (if you are using Firestore
+    // Asumimos que el primer elemento de dataToUpload son las cabeceras
+    const headers = this.dataToUpload[0];
+    const data = this.dataToUpload[1]; // El resto son los datos
+
+    // let objetos: any[] = [];
+    // for (let row of data) {
+    //   let objetoToPush: any = {};
+    //   for (let i = 0; i < headers.length; i++) {
+    //     objetoToPush[headers[i]] = row[i];
+    //   }
+    //   objetos.push(objetoToPush);
+    // }
+    // console.log(objetos);
+    
+    const items = data.map((item: any) => {
+      return item.reduce((result: any, field: any, i: any) => {
+        result[headers[i]] = field;
+        return result;
+      }, {});
+    });
+  
+    const dataObject = { 'item0': items };
+  
+    this.listadosService.create(dataObject, this.documentTitle);
   }
   
+  async updateListado(element: any, hola: any) {
+    // element = !element;
+    console.log(this.data);
+    console.log(hola);
+    
+    console.log(this.dataSource);
+    
+    await this.preUploadData(element);
 
+    // this.dataToUpload = this.data;
+    // const items = data.map((item: any) => {
+
+    //   return item.reduce((result: any, field: any, i: any) => {
+    //     result[headers[i]] = field;
+    //     return result;
+    //   }, {});
+    // });
+  
+    const dataObject = { 'item0': this.dataToUpload };
+    this.listadosService.update(this.documentTitle, dataObject); // Replace this line with the following (if you are using Firestore
+    this.reloadDataFromCookies();
+    // this.listadosService.update(this.documentTitle, this.data);
+  }
+
+  async preUploadData(element: any) {
+    await this.listadosService.getOne(this.documentTitle).then((listado: any) => {
+      console.log(listado);
+      let data = this.ordenarPropiedades(listado['item0']);
+      data.map((item: any) => {
+        if (item['Tipo'] === element[0] && item['FOGUERA /BARRACA'] === element[1])
+          item['Ha llegado'] = element[2];
+        });
+      this.dataToUpload = data;
+    });
+  }
+
+  reloadDataFromCookies() {
+    this.listadosService.getOne(this.documentTitle).then((listado: any) => {
+      console.log(listado);
+      let data = this.ordenarPropiedades(listado['item0']);
+      this.data = [];
+      data.forEach((item: any) => {
+        this.data.push(Object.values(item));
+      });
+      this.dataSource = new MatTableDataSource(this.data);
+      if (this.dataSource) {
+        this.dataSource.paginator = this.paginator;
+      }
+      this.changeDetectorRefs.detectChanges();
+    });
+  }
 }

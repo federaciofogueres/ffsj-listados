@@ -58,7 +58,7 @@
                   <mat-header-cell *matHeaderCellDef> {{column.label}} </mat-header-cell>
                   <mat-cell *matCellDef="let element">
                     @if (column.type === 'checkbox') {
-                      <mat-checkbox [checked]="element[i]" (change)="element[i] = !element[i]"></mat-checkbox>
+                      <mat-checkbox [checked]="element[i]" (change)="element[i] = !element[i]; updateListado(element, column.label)"></mat-checkbox>
                     } @else {
                       @if (element[i]?.length > 100) {
                         {{element[i].slice(0,97)}}... 

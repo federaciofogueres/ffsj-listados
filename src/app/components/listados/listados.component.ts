@@ -57,6 +57,8 @@ export class ListadosComponent {
     //   //   }));
     //   // }
       console.log(listados);
+      //@ts-ignore
+      listados[0]['item0'] = this.ordenarPropiedades(listados[0]['item0']);
       
 
       for (let listadoGroup of listados) {
@@ -89,9 +91,23 @@ export class ListadosComponent {
       this.loading = false;
     });
   }
+// @ts-ignore
+  ordenarPropiedades(objetos) {
+    const ordenDePropiedades = ['Tipo', 'FOGUERA /BARRACA', 'Ha llegado'];
+  // @ts-ignore
+    return objetos.map(obj => {
+      let newObj = {};
+      ordenDePropiedades.forEach(prop => {// @ts-ignore
+        newObj[prop] = obj[prop];
+      });
+      return newObj;
+    });
+  }
   
   viewItem(element: any) {
     this.listadosService.setListado(element.value);
+    this.listadosService.setListadoName(element.label);
+    this.cookieService.set('listado', element.label);
     this.router.navigate([`/${element.key}`]);
   }
 }

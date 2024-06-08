@@ -7,6 +7,7 @@ import { Firestore, collection, deleteDoc, doc, getDoc, getDocs, query, setDoc, 
 export class ListadosService {
 
   private listadoSeleccionado: any;
+  private listadoName: string = '';
 
   private _firestore = inject(Firestore);
 
@@ -66,4 +67,13 @@ export class ListadosService {
   getListado() {
     return this.listadoSeleccionado;
   }
+
+  setListadoName(name: string) {
+    this.listadoName = name;
+  }
+
+  getListadoName() {  
+    return this.listadoName;
+  }
+
 }

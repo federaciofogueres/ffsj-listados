@@ -39,11 +39,11 @@ export interface Cabecera {
     FormsModule,
     CommonModule
   ],
-  templateUrl: './listado.component.html',
+  templateUrl: './listado-old.component.html',
   styleUrl: './listado.component.scss',
   schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
-export class ListadoComponent {
+export class ListadoOldComponent {
 
   dataToUpload: any[] = [];
   // data: any[] = []; // Los datos obtenidos desde Firestore
