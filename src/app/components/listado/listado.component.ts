@@ -56,6 +56,7 @@ export class ListadoComponent {
   camposAgregados: string[] = [];
   loading: boolean = true;
   dataToUpload: any[] = [];
+  showCampos: boolean = false;
 
   documentTitle: string = 'Sin nombre';
 
@@ -89,7 +90,6 @@ export class ListadoComponent {
         this.procesaDataFromCache(data);
       }
     }
-    
   }
 
   // @ts-ignore
@@ -135,7 +135,21 @@ export class ListadoComponent {
   }
 
   addCampo(value: string) {
-    this.camposAgregados.push(value);
+    if (value && value.trim() !== '' && !this.camposAgregados.includes(value)) {
+      this.camposAgregados.push(value);
+    }
+  }
+
+  removeCampo(campo: string) {
+    this.camposAgregados = this.camposAgregados.filter(c => c !== campo);
+    this.nuevasCabeceras = this.nuevasCabeceras.filter(cabecera => cabecera.label !== campo);
+    this.data[0] = this.data[0].filter((header: any) => header !== campo);
+    for (let i = 1; i < this.data.length; i++) {
+      this.data[i] = this.data[i].filter((field: any) => field !== campo);
+    }
+    this.displayedColumns = this.displayedColumns.filter((column: any) => column !== campo);
+    this.activeColumns = this.activeColumns.filter((column: any) => column !== campo);
+    this.changeDetectorRefs.detectChanges();
   }
 
   changeStateCabecera(cabecera: Cabecera) {
@@ -158,6 +172,7 @@ export class ListadoComponent {
       this.dataSource.paginator = this.paginator;
       this.dataSource.data = [];
     }
+    this.nuevasCabeceras = [];
   }
 
   onFileChange(evt: any) {
@@ -267,7 +282,20 @@ export class ListadoComponent {
 
   downloadExcelTemplate() {
     console.log('Downloading template xls');
-    
+    // Crear un nuevo libro de trabajo
+    const wb = XLSX.utils.book_new();
+  
+    // Crear un objeto donde cada clave es un elemento de 'camposAgregados' y el valor es una cadena vacía
+    const templateRow = this.camposAgregados.reduce((obj, campo) => ({ ...obj, [campo]: '' }), {});
+  
+    // Crear una nueva hoja de cálculo a partir de los datos de 'camposAgregados'
+    const ws = XLSX.utils.json_to_sheet([templateRow]);
+  
+    // Añadir la hoja de cálculo al libro de trabajo
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+  
+    // Escribir el libro de trabajo en un archivo y descargarlo
+    XLSX.writeFile(wb, "template.xlsx");
   }
 
   createData() {
