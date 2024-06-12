@@ -53,7 +53,7 @@ export class ListadoComponent {
   nuevasCabeceras: Cabecera[] = [];
   archivoSubido: boolean = false;
   showInput = false;
-  camposAgregados: string[] = [];
+  camposAgregados: Cabecera[] = [];
   loading: boolean = true;
   dataToUpload: any[] = [];
   showCampos: boolean = false;
@@ -134,14 +134,15 @@ export class ListadoComponent {
     this.loading = false;
   }
 
-  addCampo(value: string) {
-    if (value && value.trim() !== '' && !this.camposAgregados.includes(value)) {
-      this.camposAgregados.push(value);
+  addCampo(value: string, tipo: string) {
+    if (value && value.trim() !== '' && !this.camposAgregados.find(campo => campo.label === value)) {
+      const order = this.camposAgregados.length > 0 ? this.camposAgregados[this.camposAgregados.length - 1].order + 1 : 1;
+      this.camposAgregados.push({ label: value, order: order, active: true, type: tipo });
     }
   }
 
   removeCampo(campo: string) {
-    this.camposAgregados = this.camposAgregados.filter(c => c !== campo);
+    this.camposAgregados = this.camposAgregados.filter(c => c.label !== campo);
     this.nuevasCabeceras = this.nuevasCabeceras.filter(cabecera => cabecera.label !== campo);
     this.data[0] = this.data[0].filter((header: any) => header !== campo);
     for (let i = 1; i < this.data.length; i++) {
@@ -243,13 +244,7 @@ export class ListadoComponent {
   
   addAdditionalFields() {
     for (let campo of this.camposAgregados) {
-      this.nuevasCabeceras.push({
-        label: campo,
-        order: this.nuevasCabeceras[0].order - 1,
-        active: true,
-        type: 'checkbox'
-      });
-  
+      this.nuevasCabeceras.push(campo);
       this.data[0].push(campo);
       for (let i = 1; i < this.data.length; i++) {
         this.data[i].push(false);
@@ -285,8 +280,8 @@ export class ListadoComponent {
     // Crear un nuevo libro de trabajo
     const wb = XLSX.utils.book_new();
   
-    // Crear un objeto donde cada clave es un elemento de 'camposAgregados' y el valor es una cadena vacía
-    const templateRow = this.camposAgregados.reduce((obj, campo) => ({ ...obj, [campo]: '' }), {});
+    // Crear un objeto donde cada clave es el campo 'label' de cada elemento de 'camposAgregados' y el valor es una cadena vacía
+    const templateRow = this.camposAgregados.reduce((obj, campo) => ({ ...obj, [campo.label]: '' }), {});
   
     // Crear una nueva hoja de cálculo a partir de los datos de 'camposAgregados'
     const ws = XLSX.utils.json_to_sheet([templateRow]);
